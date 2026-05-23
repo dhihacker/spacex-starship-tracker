@@ -40,7 +40,11 @@ export default function StarshipTracker() {
   const [isConnected, setIsConnected] = useState(true);
   const [refreshRate, setRefreshRate] = useState(1000);
   const [mounted, setMounted] = useState(false);
+  const [liveMissionTime, setLiveMissionTime] = useState<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const missionTimeBaseRef = useRef<number>(0);
+  const lastFetchTimeRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
 
   const fetchData = async () => {
     try {
@@ -61,6 +65,10 @@ export default function StarshipTracker() {
       setUpdateCount((prev) => prev + 1);
       setIsConnected(true);
       setError(null);
+      
+      // Sync mission time base with API data
+      missionTimeBaseRef.current = jsonData.ship39.current.mission_time;
+      lastFetchTimeRef.current = performance.now();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
       setIsConnected(false);
@@ -80,6 +88,25 @@ export default function StarshipTracker() {
     };
   }, [refreshRate]);
 
+  // High-frequency mission time update using requestAnimationFrame
+  useEffect(() => {
+    const updateMissionTime = () => {
+      if (missionTimeBaseRef.current > 0) {
+        const elapsed = (performance.now() - lastFetchTimeRef.current) / 1000;
+        setLiveMissionTime(missionTimeBaseRef.current + elapsed);
+      }
+      animationFrameRef.current = requestAnimationFrame(updateMissionTime);
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(updateMissionTime);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
   const ship = data?.ship39;
 
   const formatNumber = (num: number, decimals: number = 2) => {
@@ -93,7 +120,8 @@ export default function StarshipTracker() {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    return `T+${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    const ms = Math.floor((seconds % 1) * 100);
+    return `T+${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -204,8 +232,8 @@ export default function StarshipTracker() {
                 <Clock className="h-4 w-4 text-accent" />
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Mission Time</span>
               </div>
-              <p className="text-2xl font-bold text-foreground font-mono">
-                {ship ? formatTime(ship.current.mission_time) : "--:--:--"}
+              <p className="text-2xl font-bold text-foreground font-mono tabular-nums">
+                {liveMissionTime > 0 ? formatTime(liveMissionTime) : "--:--:--.--"}
               </p>
               <p className="text-xs text-muted-foreground">elapsed</p>
             </CardContent>
