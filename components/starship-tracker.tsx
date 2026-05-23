@@ -120,8 +120,7 @@ export default function StarshipTracker() {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 100);
-    return `T+${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
+    return `T+${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -233,7 +232,7 @@ export default function StarshipTracker() {
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Mission Time</span>
               </div>
               <p className="text-2xl font-bold text-foreground font-mono tabular-nums">
-                {liveMissionTime > 0 ? formatTime(liveMissionTime) : "--:--:--.--"}
+                {liveMissionTime > 0 ? formatTime(liveMissionTime) : "--:--:--"}
               </p>
               <p className="text-xs text-muted-foreground">elapsed</p>
             </CardContent>
