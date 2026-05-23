@@ -45,6 +45,7 @@ export default function StarshipTracker() {
   const missionTimeBaseRef = useRef<number>(0);
   const lastFetchTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
+  const isFirstFetchRef = useRef<boolean>(true);
 
   const fetchData = async () => {
     try {
