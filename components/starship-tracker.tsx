@@ -37,7 +37,6 @@ export default function StarshipTracker() {
   const [data, setData] = useState<TrackerData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [updateCount, setUpdateCount] = useState(0);
   const [isConnected, setIsConnected] = useState(true);
   const [refreshRate, setRefreshRate] = useState(1000);
   const [mounted, setMounted] = useState(false);
@@ -83,7 +82,6 @@ export default function StarshipTracker() {
       shipKeyRef.current = shipKey;
       setData(transformedData);
       setLastUpdate(new Date());
-      setUpdateCount((prev) => prev + 1);
       setIsConnected(true);
       setError(null);
 
@@ -179,12 +177,6 @@ export default function StarshipTracker() {
               )}
               {isConnected ? "Connected" : "Disconnected"}
             </Badge>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
-              <RefreshCw className="h-3.5 w-3.5 text-accent animate-spin" />
-              <span className="text-sm text-muted-foreground">
-                {updateCount} updates
-              </span>
-            </div>
             <select
               value={refreshRate}
               onChange={(e) => setRefreshRate(Number(e.target.value))}
