@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Rocket, MapPin, Gauge, Mountain, Clock, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { Rocket, MapPin, Gauge, Mountain, Clock, RefreshCw } from "lucide-react";
 
 interface TrajectoryPoint {
   time: number;
@@ -37,7 +36,6 @@ export default function StarshipTracker() {
   const [data, setData] = useState<TrackerData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [isConnected, setIsConnected] = useState(true);
   const [refreshRate, setRefreshRate] = useState(1000);
   const [mounted, setMounted] = useState(false);
   const [liveMissionTime, setLiveMissionTime] = useState<number>(0);
@@ -82,7 +80,6 @@ export default function StarshipTracker() {
       shipKeyRef.current = shipKey;
       setData(transformedData);
       setLastUpdate(new Date());
-      setIsConnected(true);
       setError(null);
 
       // Only update mission time base if new time is greater (prevent backward time)
@@ -94,7 +91,6 @@ export default function StarshipTracker() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
-      setIsConnected(false);
     }
   };
 
@@ -166,17 +162,6 @@ export default function StarshipTracker() {
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge
-              variant={isConnected ? "default" : "destructive"}
-              className="flex items-center gap-1.5 px-3 py-1.5"
-            >
-              {isConnected ? (
-                <Wifi className="h-3.5 w-3.5" />
-              ) : (
-                <WifiOff className="h-3.5 w-3.5" />
-              )}
-              {isConnected ? "Connected" : "Disconnected"}
-            </Badge>
             <select
               value={refreshRate}
               onChange={(e) => setRefreshRate(Number(e.target.value))}
