@@ -41,6 +41,7 @@ export default function StarshipTracker() {
   const [refreshRate, setRefreshRate] = useState(1000);
   const [mounted, setMounted] = useState(false);
   const [liveMissionTime, setLiveMissionTime] = useState<number>(0);
+
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const missionTimeBaseRef = useRef<number>(0);
   const lastFetchTimeRef = useRef<number>(0);
@@ -55,21 +56,37 @@ export default function StarshipTracker() {
           "Cache-Control": "no-cache",
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const jsonData: any = await response.json();
       
-      const jsonData: TrackerData = await response.json();
-      setData(jsonData);
+      // Find the first ship key (excluding 'metadata')
+      const shipKey = Object.keys(jsonData).find(
+        key => key !== 'metadata' && jsonData[key]?.current
+      );
+
+      if (!shipKey) {
+        throw new Error("No ship data found in response");
+      }
+
+      // Transform to match expected TrackerData structure
+      const transformedData: TrackerData = {
+        ship39: jsonData[shipKey]
+      };
+
+      setData(transformedData);
       setLastUpdate(new Date());
       setUpdateCount((prev) => prev + 1);
       setIsConnected(true);
       setError(null);
-      
+
       // Sync mission time base with API data
-      missionTimeBaseRef.current = jsonData.ship39.current.mission_time;
+      missionTimeBaseRef.current = transformedData.ship39.current.mission_time;
       lastFetchTimeRef.current = performance.now();
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
       setIsConnected(false);
@@ -79,9 +96,9 @@ export default function StarshipTracker() {
   useEffect(() => {
     setMounted(true);
     fetchData();
-    
+
     intervalRef.current = setInterval(fetchData, refreshRate);
-    
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -98,9 +115,9 @@ export default function StarshipTracker() {
       }
       animationFrameRef.current = requestAnimationFrame(updateMissionTime);
     };
-    
+
     animationFrameRef.current = requestAnimationFrame(updateMissionTime);
-    
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -111,9 +128,9 @@ export default function StarshipTracker() {
   const ship = data?.ship39;
 
   const formatNumber = (num: number, decimals: number = 2) => {
-    return num?.toLocaleString(undefined, { 
-      minimumFractionDigits: decimals, 
-      maximumFractionDigits: decimals 
+    return num?.toLocaleString(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }) || "N/A";
   };
 
@@ -142,10 +159,9 @@ export default function StarshipTracker() {
               </p>
             </div>
           </div>
-          
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge 
-              variant={isConnected ? "default" : "destructive"} 
+            <Badge
+              variant={isConnected ? "default" : "destructive"}
               className="flex items-center gap-1.5 px-3 py-1.5"
             >
               {isConnected ? (
@@ -155,14 +171,12 @@ export default function StarshipTracker() {
               )}
               {isConnected ? "Connected" : "Disconnected"}
             </Badge>
-            
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
               <RefreshCw className="h-3.5 w-3.5 text-accent animate-spin" />
               <span className="text-sm text-muted-foreground">
                 {updateCount} updates
               </span>
             </div>
-            
             <select
               value={refreshRate}
               onChange={(e) => setRefreshRate(Number(e.target.value))}
@@ -256,7 +270,7 @@ export default function StarshipTracker() {
           <CardContent className="p-0 mt-4">
             <div className="h-[500px] md:h-[600px] w-full relative">
               {mounted && ship && (
-                <MapComponent 
+                <MapComponent
                   latitude={ship.current.latitude}
                   longitude={ship.current.longitude}
                   altitude={ship.current.altitude}
@@ -283,17 +297,17 @@ export default function StarshipTracker() {
   );
 }
 
-function MapComponent({ 
-  latitude, 
-  longitude, 
-  altitude, 
-  speed, 
-  trajectory 
-}: { 
-  latitude: number; 
-  longitude: number; 
-  altitude: number; 
-  speed: number; 
+function MapComponent({
+  latitude,
+  longitude,
+  altitude,
+  speed,
+  trajectory,
+}: {
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  speed: number;
   trajectory: TrajectoryPoint[];
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -302,9 +316,9 @@ function MapComponent({
   const polylineRef = useRef<L.Polyline | null>(null);
 
   const formatNumber = (num: number, decimals: number = 2) => {
-    return num?.toLocaleString(undefined, { 
-      minimumFractionDigits: decimals, 
-      maximumFractionDigits: decimals 
+    return num?.toLocaleString(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }) || "N/A";
   };
 
@@ -351,7 +365,9 @@ function MapComponent({
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
         }).addTo(leafletMapRef.current);
 
-        markerRef.current = L.marker([latitude, longitude], { icon: rocketIcon })
+        markerRef.current = L.marker([latitude, longitude], {
+          icon: rocketIcon,
+        })
           .addTo(leafletMapRef.current)
           .bindPopup(`
             <div style="font-family: system-ui; padding: 8px;">
@@ -401,7 +417,10 @@ function MapComponent({
           <p style="margin: 4px 0;">Lng: ${formatNumber(longitude, 4)}°</p>
         </div>
       `);
-      leafletMapRef.current.panTo([latitude, longitude], { animate: true, duration: 0.5 });
+      leafletMapRef.current.panTo([latitude, longitude], {
+        animate: true,
+        duration: 0.5,
+      });
 
       // Update trajectory
       if (polylineRef.current && trajectory.length > 1) {
