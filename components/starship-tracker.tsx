@@ -28,6 +28,7 @@ interface ShipData {
 
 interface TrackerData {
   ship39: ShipData;
+  shipKey: string;
 }
 
 const API_URL = "/api/starship";
@@ -47,6 +48,7 @@ export default function StarshipTracker() {
   const lastFetchTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const isFirstFetchRef = useRef<boolean>(true);
+  const shipKeyRef = useRef<string>("ship39");
 
   const fetchData = async () => {
     try {
@@ -74,9 +76,11 @@ export default function StarshipTracker() {
 
       // Transform to match expected TrackerData structure
       const transformedData: TrackerData = {
-        ship39: jsonData[shipKey]
+        ship39: jsonData[shipKey],
+        shipKey: shipKey
       };
 
+      shipKeyRef.current = shipKey;
       setData(transformedData);
       setLastUpdate(new Date());
       setUpdateCount((prev) => prev + 1);
@@ -126,6 +130,7 @@ export default function StarshipTracker() {
   }, []);
 
   const ship = data?.ship39;
+  const shipKey = data?.shipKey || "ship39";
 
   const formatNumber = (num: number, decimals: number = 2) => {
     return num?.toLocaleString(undefined, {
@@ -155,7 +160,7 @@ export default function StarshipTracker() {
                 SpaceX Starship Tracker
               </h1>
               <p className="text-muted-foreground text-sm">
-                Real-time telemetry • Ship 39
+                Real-time telemetry • {shipKey.toUpperCase()}
               </p>
             </div>
           </div>
@@ -276,6 +281,7 @@ export default function StarshipTracker() {
                   altitude={ship.current.altitude}
                   speed={ship.current.speed}
                   trajectory={ship.trajectory}
+                  shipKey={shipKey}
                 />
               )}
               {!mounted && (
@@ -303,12 +309,14 @@ function MapComponent({
   altitude,
   speed,
   trajectory,
+  shipKey,
 }: {
   latitude: number;
   longitude: number;
   altitude: number;
   speed: number;
   trajectory: TrajectoryPoint[];
+  shipKey: string;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -371,7 +379,7 @@ function MapComponent({
           .addTo(leafletMapRef.current)
           .bindPopup(`
             <div style="font-family: system-ui; padding: 8px;">
-              <p style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🚀 Ship 39</p>
+              <p style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🚀 ${shipKey.toUpperCase()}</p>
               <p style="margin: 4px 0;">Altitude: ${formatNumber(altitude / 1000, 1)} km</p>
               <p style="margin: 4px 0;">Speed: ${formatNumber(speed, 0)} m/s</p>
               <p style="margin: 4px 0;">Lat: ${formatNumber(latitude, 4)}°</p>
@@ -410,7 +418,7 @@ function MapComponent({
       markerRef.current.setLatLng([latitude, longitude]);
       markerRef.current.setPopupContent(`
         <div style="font-family: system-ui; padding: 8px;">
-          <p style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🚀 Ship 39</p>
+          <p style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">🚀 ${shipKey.toUpperCase()}</p>
           <p style="margin: 4px 0;">Altitude: ${formatNumber(altitude / 1000, 1)} km</p>
           <p style="margin: 4px 0;">Speed: ${formatNumber(speed, 0)} m/s</p>
           <p style="margin: 4px 0;">Lat: ${formatNumber(latitude, 4)}°</p>
@@ -431,7 +439,7 @@ function MapComponent({
         polylineRef.current.setLatLngs(trajectoryPath);
       }
     }
-  }, [latitude, longitude, altitude, speed, trajectory]);
+  }, [latitude, longitude, altitude, speed, trajectory, shipKey]);
 
   return <div ref={mapRef} className="h-full w-full" style={{ background: "#0a0a0f" }} />;
 }
