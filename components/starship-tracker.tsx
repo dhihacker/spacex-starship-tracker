@@ -87,9 +87,12 @@ export default function StarshipTracker() {
       setIsConnected(true);
       setError(null);
 
-      // Sync mission time base with API data
-      missionTimeBaseRef.current = transformedData.ship39.current.mission_time;
-      lastFetchTimeRef.current = performance.now();
+      // Only update mission time base if new time is greater (prevent backward time)
+      const newMissionTime = transformedData.ship39.current.mission_time;
+      if (newMissionTime > missionTimeBaseRef.current) {
+        missionTimeBaseRef.current = newMissionTime;
+        lastFetchTimeRef.current = performance.now();
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
